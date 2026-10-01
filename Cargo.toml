@@ -1,0 +1,9 @@
+[package]
+name = "horton-sweeper"
+version = "0.1.0"
+edition = "2024"
+description = "Host-side tiered-storage sweeper and table-shipping replication policy for horton"
+license = "Apache-2.0"
+
+[dependencies]
+horton = { path = "../horton" }
