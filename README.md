@@ -1,8 +1,7 @@
 # horton-sweeper
 
 Host-side tiered-storage sweeper and table-shipping replication policy for
-[horton](https://github.com/madmax983/horton). **Local crate — no remote,
-not published.**
+[horton](https://github.com/madmax983/horton).
 
 ## What it does
 
@@ -40,8 +39,23 @@ The cold target is pluggable. `ColdSink` is the trait:
 `DirSink` is the reference implementation: a local directory shaped like
 object storage (`<id>.sst` immutable blob + `<id>.desc` sidecar carrying
 level, table/seq bounds, block count, node id, seal wall-clock, and the
-CRC-64 receipt checksum). Postgres arrives via the existing
-`horton-pg-sink` crate, implementing this same contract.
+CRC-64 receipt checksum).
+
+## First-party sinks: dir vs Postgres
+
+- **`DirSink` (this crate)** — local directory. Zero dependencies beyond
+  horton, inspectable with `ls`/`tail`, perfect for tests, single-machine
+  deployments, and air-gapped boxes. Not queryable, not shared.
+- **`PgTableSink` (`horton-pg-sink` crate)** — the same contract, with
+  sealed table bytes in a Postgres `BYTEA` column and the descriptor in
+  queryable columns (`horton_cold_tables`). Pick it when Postgres is
+  already in the deployment: one fewer system to operate, transactional
+  durability, and every primary/replica shares one cold store. Costs a
+  running Postgres and the tokio stack.
+
+Both are byte-exact and idempotent per table id; both verify the CRC-64
+at commit. Third-party sinks (object storage, …) implement `ColdSink`
+against the same contract.
 
 ## The seal log
 
